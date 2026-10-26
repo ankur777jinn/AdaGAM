@@ -1,1 +1,2 @@
 ﻿- docs(ablation): log adaptation-off test-time intervention results (2026-10-22)
+- docs(ablation): add consistency-loss training setup and holdout split (2026-10-26)
