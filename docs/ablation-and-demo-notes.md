@@ -2,3 +2,4 @@
 - docs(ablation): add consistency-loss training setup and holdout split (2026-10-26)
 - docs(analysis): record stage-4 CKA feature drift comparison (2026-10-30)
 - docs(analysis): add saliency faithfulness point-removal benchmark (2026-11-03)
+- docs(demo): document ONNX Runtime Web export shapes for 3-model view (2026-11-08)
