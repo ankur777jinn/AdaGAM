@@ -76,15 +76,19 @@ let sessions = null, backend = "";
 async function fetchWithProgress(url, onp) {
   const r = await fetch(url);
   if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
-  const total = +r.headers.get("content-length") || 0;
-  if (!r.body || !total) return new Uint8Array(await r.arrayBuffer());
-  const reader = r.body.getReader(), buf = new Uint8Array(total);
+  // content-length is the compressed size when the host gzips, so collect chunks of any size
+  const total = +r.headers.get("content-length") || 0, expect = 53.5e6;
+  if (!r.body) return new Uint8Array(await r.arrayBuffer());
+  const reader = r.body.getReader(), chunks = [];
   let got = 0;
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
-    buf.set(value, got); got += value.length; onp(got / total);
+    chunks.push(value); got += value.length; onp(Math.min(1, got / Math.max(total, expect)));
   }
+  const buf = new Uint8Array(got);
+  let off = 0;
+  for (const c of chunks) { buf.set(c, off); off += c.length; }
   return buf;
 }
 
