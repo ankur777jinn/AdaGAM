@@ -3,6 +3,11 @@
 #
 #   bash run_experiments.sh train      # launch training runs in the background (logs in logs/)
 #   bash run_experiments.sh eval       # ModelNet-C eval of every finished run + results.md
+#   bash run_experiments.sh analyze    # the two explainability analyses (saliency, CKA drift)
+#
+# Launch a subset with ONLY, e.g. the two headline runs first:
+#   GPU=0 ONLY="base adagam" bash run_experiments.sh train
+# A killed run resumes from its last_checkpoint.pth when launched again with the same settings.
 #
 # Edit the variables below before launching.
 set -euo pipefail
@@ -33,7 +38,11 @@ declare -A RUNS=(
 
 case "${1:-}" in
   train)
-    for name in "${!RUNS[@]}"; do
+    # Download ModelNet40 once here; otherwise the parallel runs race on the same zip file.
+    python -c "from data import download; download()"
+    [ -d data/modelnet40_ply_hdf5_2048 ] || { echo "ModelNet40 download failed"; exit 1; }
+    for name in ${ONLY:-${!RUNS[@]}}; do
+      [ -n "${RUNS[$name]+x}" ] || { echo "unknown run: $name"; exit 1; }
       echo "launching $name"
       CUDA_VISIBLE_DEVICES=$GPU nohup python main.py $COMMON ${RUNS[$name]} --msg "$name" \
         > "logs/$name.log" 2>&1 &
@@ -56,6 +65,15 @@ case "${1:-}" in
     done
     python summarize.py
     ;;
+  analyze)
+    base_dir="checkpoints/${MODEL}-base-$SEED"
+    ada_dir="checkpoints/${MODEL}-adagam-$SEED"
+    for d in "$base_dir" "$ada_dir"; do
+      [ -f "$d/last_checkpoint.pth" ] || { echo "missing $d/last_checkpoint.pth"; exit 1; }
+    done
+    CUDA_VISIBLE_DEVICES=$GPU python xai_saliency.py --base "$base_dir" --adagam "$ada_dir"       --data data/modelnet_c --out xai_out/saliency | tee logs/xai_saliency.log
+    CUDA_VISIBLE_DEVICES=$GPU python cka_drift.py --base "$base_dir" --adagam "$ada_dir"       --data data/modelnet_c --out xai_out/cka | tee logs/cka_drift.log
+    ;;
   *)
-    echo "usage: bash run_experiments.sh {train|eval}"; exit 1 ;;
+    echo "usage: bash run_experiments.sh {train|eval|analyze}"; exit 1 ;;
 esac
