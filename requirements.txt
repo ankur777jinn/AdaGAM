@@ -1,0 +1,16 @@
+# PyTorch is installed separately so you get the right CUDA build:
+#   Windows laptop: torch 2.5.1+cu118 is already installed (supports the RTX 4050, sm_89)
+#   Linux:          pip install torch --index-url https://download.pytorch.org/whl/cu124
+# torch>=2.1 is required (torch.utils.flop_counter, torch.amp).
+numpy
+h5py
+scikit-learn
+matplotlib
+plotly
+einops
+gdown            # ModelNet-C download from Google Drive
+gradio           # live demo (live-inference branch)
+fastapi
+uvicorn
+kaleido          # optional: PNG export of Plotly figures
+pytest           # optional: python -m pytest classification_ModelNet40/tests

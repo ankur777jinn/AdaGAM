@@ -1,0 +1,27 @@
+# data, checkpoints and generated outputs
+data/
+checkpoints/
+logs/
+figures/
+features/
+saliency_output/
+saliency_figures/
+saliency_output*/
+saliency_figures*/
+results.md
+results.csv
+*.pth
+*.pth.tmp
+*.h5
+*.npz
+*.zip
+wandb/
+.download*.lock
+# python / OS
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+.DS_Store
+Thumbs.db
+.gradio/
