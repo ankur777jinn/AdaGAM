@@ -60,10 +60,11 @@ AdaGAM_v2/
     ├── dump_features.py · plot_tsne.py  global features + t-SNE
     ├── plot_figures.py · viz_style.py   OA-vs-severity, CE bars, |Δα| heatmap, corruption gallery
     ├── smoke_test.py                    CPU sanity checks (run first)
+    ├── demo_app.py · inference_engine.py · shapes.py · pc_io.py   live demo (this branch)
     └── tests/                           fake data + end-to-end tests
 ```
 
-The live demo (`demo_app.py`, Gradio) lives on the **`live-inference`** branch.
+The live demo (`demo_app.py`, Gradio) lives on the **`live-inference`** branch (this branch). See below.
 
 ## Setup
 
@@ -152,6 +153,21 @@ Useful `main.py` flags: `--amp` (fp16 autocast + GradScaler; `--amp_dtype bf16` 
 & $PY plot_tsne.py --static checkpoints\pointMLPElite-base-42 --adagam checkpoints\pointMLPElite-adagam-42 --corruption add_local_2 --out figures\tsne.png
 & $PY plot_figures.py --root checkpoints --data data\modelnet_c --out figures
 ```
+
+## Live demo (`live-inference` branch)
+
+```powershell
+cd classification_ModelNet40
+& $PY demo_app.py                                   # no checkpoint needed: untrained demo weights + banner
+& $PY demo_app.py --adagam_ckpt checkpoints\pointMLPElite-adagam-42 --base_ckpt checkpoints\pointMLPElite-base-42 --data data\modelnet_c
+# open http://127.0.0.1:7860
+```
+
+Pick a procedural shape (10 labelled classes), a ModelNet-C test object (with `--data`, using the official
+corrupted files) or upload a cloud (`.npy .npz .xyz .txt .csv .ply .obj`); choose a corruption and severity.
+The 3D view is coloured by AdaGAM's stage-1 |Δα|; the checkbox switches the adaptation off on the same weights
+(counterfactual) without changing the cloud. Design: `docs/LIVE_INFERENCE_DESIGN.md`. Tests:
+`& $PY tests\test_demo.py`.
 
 ## Colab / Kaggle fallback (if the laptop is too slow)
 
