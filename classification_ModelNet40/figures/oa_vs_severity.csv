@@ -1,0 +1,15 @@
+run,corruption,sev1,sev2,sev3,sev4,sev5
+pointMLPElite-base-42,scale,0.9024,0.9044,0.8942,0.8894,0.8902
+pointMLPElite-adagam-42,scale,0.9028,0.9064,0.8959,0.8983,0.8930
+pointMLPElite-base-42,jitter,0.9048,0.8497,0.7087,0.5004,0.2921
+pointMLPElite-adagam-42,jitter,0.9109,0.8404,0.6908,0.4664,0.2650
+pointMLPElite-base-42,rotate,0.9177,0.8979,0.8274,0.7257,0.5989
+pointMLPElite-adagam-42,rotate,0.9177,0.8947,0.8221,0.6985,0.5843
+pointMLPElite-base-42,dropout_global,0.8999,0.8764,0.7986,0.5754,0.2237
+pointMLPElite-adagam-42,dropout_global,0.9044,0.8740,0.7962,0.5778,0.2269
+pointMLPElite-base-42,dropout_local,0.8991,0.8578,0.7382,0.6122,0.4315
+pointMLPElite-adagam-42,dropout_local,0.9003,0.8404,0.7447,0.6301,0.4639
+pointMLPElite-base-42,add_global,0.7869,0.6037,0.4635,0.3383,0.2297
+pointMLPElite-adagam-42,add_global,0.7281,0.5794,0.4514,0.3712,0.2950
+pointMLPElite-base-42,add_local,0.7261,0.6560,0.6183,0.5883,0.5616
+pointMLPElite-adagam-42,add_local,0.7192,0.6256,0.5709,0.5425,0.5041
