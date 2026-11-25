@@ -1,0 +1,7 @@
+numpy
+h5py
+scikit-learn
+matplotlib
+plotly
+kaleido
+gradio
