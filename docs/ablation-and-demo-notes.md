@@ -6,3 +6,4 @@
 - docs(demo): log browser inference verification on ModelNet-C samples (2026-11-12)
 - docs: summarize failure mode analysis on high-severity jitter (2026-11-17)
 - docs: add ScanObjectNN and local-variance future work roadmap (2026-11-21)
+- docs: finalize DAC-301 project notes and demo checklist (2026-11-25)
