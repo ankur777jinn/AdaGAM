@@ -249,7 +249,11 @@ def main():
     sample_pts, sample_lbl = _load_sample_bank(args.data)
 
     demo = create_app(adagam_net, base_net, sample_pts, sample_lbl, device)
-    demo.launch(server_name="0.0.0.0", server_port=args.port, share=args.share, theme=gr.themes.Soft())
+    kw = dict(server_name="0.0.0.0", server_port=args.port, share=args.share)
+    import inspect
+    if "theme" in inspect.signature(demo.launch).parameters:   # Gradio 6 moved theme to launch()
+        kw["theme"] = gr.themes.Soft()
+    demo.launch(**kw)
 
 
 if __name__ == "__main__":
