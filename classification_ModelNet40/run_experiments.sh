@@ -17,11 +17,12 @@ MODEL=${MODEL:-pointMLP}      # pointMLP (13.2M) or pointMLPElite (0.7M, much fa
 EPOCHS=${EPOCHS:-300}         # same for every run; lower it if short on time
 R=${R:-8}                     # AdaGAM reduction; r=8 keeps param overhead <2% on pointMLP (r=4 is +2.65%)
 SEED=${SEED:-42}
+EVAL_EVERY=${EVAL_EVERY:-1}   # test on ModelNet40 every N epochs (always on the last); 5 saves ~20% time
 LAMBDA=${LAMBDA:-1.0}         # consistency weight
 # Corruptions seen during training. The rest are "unseen" at test time.
 TRAIN_CORR=${TRAIN_CORR:-jitter,drop_global,add_global,scale}   # held out: drop_local, add_local, rotate
 
-COMMON="--model $MODEL --epoch $EPOCHS --seed $SEED --workers 4"
+COMMON="--model $MODEL --epoch $EPOCHS --seed $SEED --workers 4 --eval_every $EVAL_EVERY"
 mkdir -p logs
 
 declare -A RUNS=(

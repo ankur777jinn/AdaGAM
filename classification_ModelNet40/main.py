@@ -39,6 +39,8 @@ def parse_args():
     parser.add_argument('--weight_decay', type=float, default=2e-4, help='decay rate')
     parser.add_argument('--seed', type=int, help='random seed')
     parser.add_argument('--workers', default=8, type=int, help='workers')
+    parser.add_argument('--eval_every', default=1, type=int,
+                        help='test on ModelNet40 every N epochs (always on the last epoch); saves ~18s per skipped epoch')
     # ---- AdaGAM ----
     parser.add_argument('--gam', default='static', choices=['static', 'adagam'],
                         help='static = original PointMLP affine; adagam = input-conditioned affine')
@@ -176,10 +178,14 @@ def main():
     for epoch in range(start_epoch, args.epoch):
         printf('Epoch(%d/%s) Learning Rate %s:' % (epoch + 1, args.epoch, optimizer.param_groups[0]['lr']))
         train_out = train(net, train_loader, optimizer, criterion, device, args)  # {"loss", "acc", "acc_avg", "time"}
-        test_out = validate(net, test_loader, criterion, device)
+        tested = (epoch + 1) % args.eval_every == 0 or epoch + 1 == args.epoch
+        if tested:
+            test_out = validate(net, test_loader, criterion, device)
+        elif 'test_out' not in locals():   # nothing measured yet this session
+            test_out = {"loss": float("inf"), "acc": 0., "acc_avg": 0., "time": 0}
         scheduler.step()
 
-        if test_out["acc"] > best_test_acc:
+        if tested and test_out["acc"] > best_test_acc:
             best_test_acc = test_out["acc"]
             is_best = True
         else:
@@ -207,9 +213,12 @@ def main():
                        test_out["loss"], test_out["acc_avg"], test_out["acc"]])
         printf(
             f"Training loss:{train_out['loss']} acc_avg:{train_out['acc_avg']}% acc:{train_out['acc']}% time:{train_out['time']}s")
-        printf(
-            f"Testing loss:{test_out['loss']} acc_avg:{test_out['acc_avg']}% "
-            f"acc:{test_out['acc']}% time:{test_out['time']}s [best test acc: {best_test_acc}%] \n\n")
+        if tested:
+            printf(
+                f"Testing loss:{test_out['loss']} acc_avg:{test_out['acc_avg']}% "
+                f"acc:{test_out['acc']}% time:{test_out['time']}s [best test acc: {best_test_acc}%] \n\n")
+        else:
+            printf(f"(test skipped, --eval_every {args.eval_every}) \n\n")
     logger.close()
 
     printf(f"++++++++" * 2 + "Final results" + "++++++++" * 2)
