@@ -7,8 +7,11 @@ Features:
   2. Live Counterfactual Ablation Switch: toggle AdaGAM (Delta alpha, Delta beta)
      ON vs. OFF (zeroed) on the exact same corrupted cloud and trained weights.
   3. Top-5 class confidence comparison & Stage 1-4 |Delta alpha| telemetry bars.
-  4. Works with ModelNet-C clean.h5, custom .npy uploads, or a built-in fallback
-     shape if no dataset is present.
+  4. By default shows the official ModelNet-C test files: object #i under corruption c,
+     severity s is exactly test object #i of data/modelnet_c/{c}_{s}.h5, the data behind
+     the results table. "Generated" mode applies corruptions.py on the fly instead.
+  5. Deterministic: farthest-point sampling is seeded, so the same object always gives
+     the same prediction. Use find_showcase.py to pick objects worth showing.
 
 Usage:
     python demo_app.py --adagam_ckpt checkpoints/pointMLP-adagam-42 \
@@ -40,6 +43,35 @@ MODELNET40_CLASSES = [
 ]
 
 
+# corruptions.py names -> ModelNet-C file names
+FILE_NAME = {"drop_global": "dropout_global", "drop_local": "dropout_local"}
+FPS_SEED = 0   # same farthest-point-sampling start for every forward pass (see find_showcase.py)
+
+
+def official_path(data_dir, corr_name, severity):
+    stem = "clean" if corr_name == "clean" else f"{FILE_NAME.get(corr_name, corr_name)}_{int(severity)}"
+    return os.path.join(data_dir or "", stem + ".h5")
+
+
+class OfficialData:
+    """Lazily loads ModelNet-C .h5 files and keeps them in memory."""
+
+    def __init__(self, data_dir):
+        self.data_dir, self.cache = data_dir, {}
+
+    def available(self):
+        return bool(self.data_dir) and os.path.isfile(official_path(self.data_dir, "clean", 0))
+
+    def get(self, corr_name, severity):
+        path = official_path(self.data_dir, corr_name, severity)
+        if path not in self.cache:
+            if not os.path.isfile(path):
+                return None
+            with h5py.File(path, "r") as f:
+                self.cache[path] = (f["data"][:].astype("float32"), f["label"][:].astype("int64").reshape(-1))
+        return self.cache[path]
+
+
 def _make_fallback_cloud(n_pts=1024, seed=42):
     rng = np.random.RandomState(seed)
     t = rng.uniform(0, 2 * np.pi, n_pts)
@@ -51,7 +83,7 @@ def _make_fallback_cloud(n_pts=1024, seed=42):
     return np.stack([x, y, z], axis=-1).astype("float32")
 
 
-def _load_sample_bank(data_dir, max_samples=50):
+def _load_sample_bank(data_dir, max_samples=None):
     clean_h5 = os.path.join(data_dir, "clean.h5") if data_dir else ""
     if clean_h5 and os.path.isfile(clean_h5):
         with h5py.File(clean_h5, "r") as f:
@@ -67,7 +99,8 @@ def _infer_probs(net, pts_np, device, disable_adapt=False):
     for m in adagam_mods:
         m.disable_adaptation = disable_adapt
         m.record_stats = not disable_adapt
-    x = torch.from_numpy(pts_np[None, ...]).to(device).permute(0, 2, 1)
+    x = torch.from_numpy(np.ascontiguousarray(pts_np[None, ...])).to(device).permute(0, 2, 1)
+    torch.manual_seed(FPS_SEED)
     logits = net(x)
     probs = F.softmax(logits, dim=-1)[0].cpu().numpy()
     stage_dalpha = [m.last_stats["d_alpha_abs"] if m.last_stats else 0.0 for m in adagam_mods]
@@ -160,42 +193,58 @@ def _build_stage_fig(stage_dalpha):
     return fig
 
 
-def create_app(adagam_net, base_net, sample_pts, sample_lbl, device):
-    def run_screening(sample_idx, npy_file, corr_name, severity, adapt_on):
+def create_app(adagam_net, base_net, sample_pts, sample_lbl, device, official=None):
+    use_official_default = official is not None and official.available()
+
+    def run_screening(sample_idx, npy_file, corr_name, severity, adapt_on, source):
+        idx = int(sample_idx or 0) % len(sample_pts)
+        gt = None
+        official_hit = False
         if npy_file is not None:
             pts_clean = np.load(npy_file.name).astype("float32")[:, :3]
             gt_name = "custom .npy"
         else:
-            idx = int(sample_idx) % len(sample_pts)
             pts_clean = sample_pts[idx].copy()
-            gt_name = MODELNET40_CLASSES[int(sample_lbl[idx])]
+            gt = int(sample_lbl[idx])
+            gt_name = MODELNET40_CLASSES[gt]
 
-        if corr_name == "clean":
-            pts_corr = pts_clean.copy()
-        else:
-            pts_corr = CORRUPTION_FUNCS[corr_name](pts_clean.copy(), int(severity)).astype("float32")
+        if npy_file is None and source == "Official ModelNet-C files" and official is not None:
+            got = official.get(corr_name, severity)
+            if got is not None:
+                pts_corr, official_hit = got[0][idx].copy(), True
+        if not official_hit:
+            if corr_name == "clean":
+                pts_corr = pts_clean.copy()
+            else:
+                pts_corr = CORRUPTION_FUNCS[corr_name](pts_clean.copy(), int(severity)).astype("float32")
 
         probs_on, stage_dalpha = _infer_probs(adagam_net, pts_corr, device, disable_adapt=False)
         probs_off, _ = _infer_probs(adagam_net, pts_corr, device, disable_adapt=True)
         probs_base = _infer_probs(base_net, pts_corr, device)[0] if base_net is not None else None
 
         if adapt_on:
+            torch.manual_seed(FPS_SEED)
             saliency, _ = compute_point_saliency(adagam_net, pts_corr[None, ...], device)
             saliency = saliency[0]
         else:
             saliency = np.zeros(len(pts_corr), dtype=np.float32)
 
-        pred_on = f"{MODELNET40_CLASSES[int(probs_on.argmax())]} ({probs_on.max() * 100:.1f}%)"
-        pred_off = f"{MODELNET40_CLASSES[int(probs_off.argmax())]} ({probs_off.max() * 100:.1f}%)"
+        def fmt(probs):
+            k = int(probs.argmax())
+            mark = "" if gt is None else (" ✅" if k == gt else " ❌")
+            return f"`{MODELNET40_CLASSES[k]}` ({probs.max() * 100:.1f}%){mark}"
+
+        src = "official ModelNet-C file" if official_hit else ("clean" if corr_name == "clean" else "generated on the fly")
         summary = (
-            f"### Live Screening Telemetry\n"
-            f"- **Ground Truth:** `{gt_name}` | **Corruption:** `{corr_name}` (sev `{severity}`)\n"
-            f"- **AdaGAM ON:** `{pred_on}`\n"
-            f"- **Counterfactual OFF (Δα=0, Δβ=0):** `{pred_off}`\n"
+            f"### Object #{idx}: ground truth `{gt_name}`\n"
+            f"- **Input:** `{corr_name}`, severity `{int(severity)}`, {len(pts_corr)} points ({src})\n"
         )
         if probs_base is not None:
-            pred_base = f"{MODELNET40_CLASSES[int(probs_base.argmax())]} ({probs_base.max() * 100:.1f}%)"
-            summary += f"- **Static PointMLP Baseline:** `{pred_base}`\n"
+            summary += f"- **PointMLP:** {fmt(probs_base)}\n"
+        summary += (
+            f"- **AdaGAM:** {fmt(probs_on)}\n"
+            f"- **AdaGAM, adaptation off (Δα=0, Δβ=0):** {fmt(probs_off)}\n"
+        )
 
         return (
             _build_3d_fig(pts_clean, pts_corr, saliency, corr_name, severity),
@@ -212,7 +261,10 @@ def create_app(adagam_net, base_net, sample_pts, sample_lbl, device):
         )
         with gr.Row():
             with gr.Column(scale=1):
-                sample_idx = gr.Slider(0, max(0, len(sample_pts) - 1), value=0, step=1, label="Test Sample Index")
+                source = gr.Radio(["Official ModelNet-C files", "Generated (corruptions.py)"],
+                                  value="Official ModelNet-C files" if use_official_default else "Generated (corruptions.py)",
+                                  label="Corrupted input")
+                sample_idx = gr.Number(value=0, precision=0, label=f"Test object # (0–{len(sample_pts) - 1})")
                 npy_file = gr.File(label="Or Upload Custom .npy [N, 3]", file_types=[".npy"])
                 corr_name = gr.Dropdown(["clean"] + ALL_CORRUPTIONS, value="jitter", label="Corruption Type")
                 severity = gr.Slider(0, 4, value=3, step=1, label="Corruption Severity (0–4)")
@@ -225,7 +277,7 @@ def create_app(adagam_net, base_net, sample_pts, sample_lbl, device):
                     fig_prob = gr.Plot(label="Class Confidence Comparison")
                     fig_stage = gr.Plot(label="Stage-wise |Δα| Telemetry")
 
-        inputs = [sample_idx, npy_file, corr_name, severity, adapt_on]
+        inputs = [sample_idx, npy_file, corr_name, severity, adapt_on, source]
         outputs = [fig_3d, summary_md, fig_prob, fig_stage]
         run_btn.click(fn=run_screening, inputs=inputs, outputs=outputs)
         demo.load(fn=run_screening, inputs=inputs, outputs=outputs)
@@ -248,7 +300,9 @@ def main():
     base_net = load_model(args.base_ckpt, device, args.which)[0] if args.base_ckpt else None
     sample_pts, sample_lbl = _load_sample_bank(args.data)
 
-    demo = create_app(adagam_net, base_net, sample_pts, sample_lbl, device)
+    official = OfficialData(args.data)
+    print("Official ModelNet-C files:", "found" if official.available() else "not found, using generated corruptions")
+    demo = create_app(adagam_net, base_net, sample_pts, sample_lbl, device, official)
     kw = dict(server_name="0.0.0.0", server_port=args.port, share=args.share)
     import inspect
     if "theme" in inspect.signature(demo.launch).parameters:   # Gradio 6 moved theme to launch()

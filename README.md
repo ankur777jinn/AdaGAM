@@ -56,7 +56,10 @@ CUDA_VISIBLE_DEVICES=0 python dump_features.py --ckpt checkpoints/pointMLP-base-
 CUDA_VISIBLE_DEVICES=0 python dump_features.py --ckpt checkpoints/pointMLP-adagam-42 --data data/modelnet_c
 python plot_tsne.py --base checkpoints/pointMLP-base-42/features.npz --adagam checkpoints/pointMLP-adagam-42/features.npz
 
-# Live Inference Screening Web App
+# Live Inference Screening Web App (official ModelNet-C files, deterministic)
+# 1) find objects where switching the adaptation off flips the prediction -> showcase.md
+CUDA_VISIBLE_DEVICES=0 python find_showcase.py --base checkpoints/pointMLP-base-42 --adagam checkpoints/pointMLP-adagam-42 --data data/modelnet_c
+# 2) launch; open http://localhost:7860 (from a laptop: ssh -L 7860:localhost:7860 user@server)
 python demo_app.py --adagam_ckpt checkpoints/pointMLP-adagam-42 --base_ckpt checkpoints/pointMLP-base-42 --data data/modelnet_c
 ```
 
