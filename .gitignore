@@ -24,3 +24,5 @@ wandb/
 xai_out/
 xai_smoke_output/
 classification_ModelNet40/showcase.md
+classification_ModelNet40/web_selftest/
+classification_ModelNet40/web_build/

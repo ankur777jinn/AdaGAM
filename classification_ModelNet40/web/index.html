@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AdaGAM Live</title>
+<meta name="description" content="Run PointMLP and AdaGAM live in your browser on corrupted 3D point clouds from ModelNet-C.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: control rail | 3D viewer | three prediction cards; model colours match the project's figures. */
+:root {
+  --bg: #f4f5f3; --surface: #ffffff; --sunk: #e9ebe7; --fg: #15181c; --fg2: #4c535a; --fg3: #7b8289; --line: #d9ddd7;
+  --viewer: #0f1316; --viewer-fg: #dfe5ea; --pt: #9fb6cc; --inj: #ff8a3d; --ghost: #4a5560;
+  --pm: #2a78d6; --ada: #eb6834; --off: #1baf7a; --good: #1c8a4f; --bad: #c43b33; --good-bg: #e3f3ea; --bad-bg: #fbe7e5;
+  --f-display: "Sora", "Segoe UI", system-ui, sans-serif; --f-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Consolas, monospace; color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg: #0d1013; --surface: #151a1e; --sunk: #1c2227; --fg: #e8ecef; --fg2: #a9b1b8; --fg3: #7c858d; --line: #283036;
+  --viewer: #080a0c; --pt: #8fb0d0; --ghost: #3a444d; --pm: #5b9be6; --ada: #f08a5d; --off: #3cc995;
+  --good: #4fd08a; --bad: #f27a72; --good-bg: #15301f; --bad-bg: #3a1c1a; color-scheme: dark; } }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--fg); font: 400 15px/1.6 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.page { max-width: 1320px; margin: 0 auto; padding-block: 28px 64px; }
+header { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; justify-content: space-between; margin-bottom: 20px; }
+h1 { font: 700 clamp(1.8rem, 4vw, 2.6rem)/1.05 var(--f-display); margin: 0 0 6px; letter-spacing: -.02em; }
+h2 { font: 600 1.4rem/1.2 var(--f-display); margin: 0 0 12px; text-wrap: balance; }
+h3 { font: 600 1rem/1.3 var(--f-display); margin: 0 0 8px; }
+.sub { color: var(--fg2); max-width: 70ch; margin: 0; }
+.links { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: 8px; font: 500 14px var(--f-body); padding: 8px 14px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--fg); text-decoration: none; cursor: pointer; }
+.btn.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn:focus-visible, select:focus-visible, input:focus-visible, .chip:focus-visible { outline: 2px solid var(--pm); outline-offset: 2px; }
+
+.demo { display: grid; grid-template-columns: 280px minmax(0, 1fr) 330px; gap: 16px; align-items: start; }
+@media (max-width: 1100px) { .demo { grid-template-columns: 260px minmax(0, 1fr); } .cards { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .demo { grid-template-columns: minmax(0, 1fr); } .cards { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 14px; min-width: 0; }
+label.f { display: grid; gap: 6px; font: 600 12px/1.2 var(--f-body); color: var(--fg2); text-transform: uppercase; letter-spacing: .06em; }
+select, input[type=range] { width: 100%; }
+select { font: 400 14px var(--f-body); padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+.sev { display: flex; justify-content: space-between; font: 400 12px var(--f-mono); color: var(--fg3); }
+.status { font: 400 12.5px/1.5 var(--f-mono); color: var(--fg2); background: var(--sunk); border-radius: 8px; padding: 8px 10px; min-height: 40px; }
+.bar { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; } .bar i { display: block; height: 100%; width: 0; background: var(--pm); transition: width .2s; }
+.muted { color: var(--fg3); font-size: 12.5px; margin: 0; }
+
+.viewer { position: relative; background: var(--viewer); border-radius: 12px; overflow: hidden; aspect-ratio: 4 / 3; min-height: 320px; }
+.viewer canvas { display: block; width: 100%; height: 100%; }
+.vlabel { position: absolute; left: 12px; top: 10px; color: var(--viewer-fg); font: 500 13px var(--f-body); pointer-events: none; text-shadow: 0 1px 2px #000; }
+.vlegend { position: absolute; left: 12px; bottom: 10px; display: flex; gap: 14px; color: var(--viewer-fg); font: 400 12px var(--f-body); }
+.vlegend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.vtoggle { position: absolute; right: 10px; top: 8px; display: flex; gap: 6px; }
+.vtoggle label { color: var(--viewer-fg); font: 400 12px var(--f-body); display: inline-flex; gap: 6px; align-items: center; background: #ffffff14; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
+
+.cards { display: grid; gap: 12px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; border-top: 4px solid var(--c); min-width: 0; }
+.card.right { background: linear-gradient(var(--good-bg), var(--surface) 60%); } .card.wrong { background: linear-gradient(var(--bad-bg), var(--surface) 60%); }
+.card .hd { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.card .nm { font: 600 13px var(--f-body); color: var(--fg2); }
+.card .ms { font: 400 11.5px var(--f-mono); color: var(--fg3); }
+.card .top { font: 600 1.35rem/1.25 var(--f-display); margin: 4px 0 8px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.card .top .pc { font: 500 .95rem var(--f-mono); color: var(--fg2); }
+.card .mark { font-weight: 700; } .card.right .mark { color: var(--good); } .card.wrong .mark { color: var(--bad); }
+.t5 { display: grid; gap: 3px; }
+.t5 div { display: grid; grid-template-columns: 96px minmax(0, 1fr) 46px; gap: 8px; align-items: center; font: 400 12px var(--f-body); color: var(--fg2); }
+.t5 div span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.t5 b { display: block; height: 7px; border-radius: 4px; background: var(--c); opacity: .85; }
+.t5 em { font: 400 11.5px var(--f-mono); font-style: normal; text-align: right; }
+.check { font: 400 12px var(--f-body); color: var(--fg3); margin: 0; }
+
+.presets { margin: 18px 0 0; display: grid; gap: 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: 500 13px var(--f-body); border: 1px solid var(--line); background: var(--surface); color: var(--fg); padding: 7px 12px; border-radius: 999px; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
+.chip i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+section.info { margin-top: 56px; padding-top: 40px; border-top: 1px solid var(--line); }
+.cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 900px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+.cols .panel p { margin: 0; color: var(--fg2); }
+.eq { font: 400 13.5px/1.7 var(--f-mono); background: var(--sunk); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+th, td { padding: 8px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { background: var(--sunk); color: var(--fg2); font-weight: 600; font-size: 12px; }
+tr:last-child td { border-bottom: 0; }
+.win { color: var(--good); font-weight: 600; } .lose { color: var(--bad); font-weight: 600; }
+figure { margin: 16px 0 0; } figure img { width: 100%; border-radius: 10px; border: 1px solid var(--line); background: #fcfcfb; }
+figcaption { color: var(--fg2); font-size: 13px; margin-top: 6px; max-width: 80ch; }
+footer { margin-top: 48px; color: var(--fg3); font-size: 13px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+footer a { color: var(--fg2); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.webgpu.min.js"></script>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div>
+      <h1>AdaGAM Live</h1>
+      <p class="sub">Two trained point-cloud classifiers running in your browser on corrupted 3D objects from ModelNet-C. <span style="color:var(--pm);font-weight:600">PointMLP</span>, <span style="color:var(--ada);font-weight:600">PointMLP + AdaGAM</span>, and the same AdaGAM with its <span style="color:var(--off);font-weight:600">adaptation switched off</span>.</p>
+    </div>
+    <div class="links">
+      <a class="btn" href="https://github.com/ankur777jinn/AdaGAM" target="_blank" rel="noopener">Code on GitHub</a>
+    </div>
+  </header>
+
+  <div class="demo">
+    <div class="panel" id="controls">
+      <label class="f" for="obj">Object
+        <select id="obj" disabled><option>Loading…</option></select>
+      </label>
+      <label class="f" for="corr">Corruption
+        <select id="corr" disabled>
+          <option value="clean">Clean (no corruption)</option>
+          <option value="add_global">Add-Global: random outlier points</option>
+          <option value="add_local">Add-Local: clusters of extra points</option>
+          <option value="jitter">Jitter: noise on every point</option>
+          <option value="dropout_global">Drop-Global: random points removed</option>
+          <option value="dropout_local">Drop-Local: patches removed</option>
+          <option value="rotate">Rotate: small rotations</option>
+          <option value="scale">Scale: stretched axes</option>
+        </select>
+      </label>
+      <label class="f" for="sev">Severity <span id="sevv" style="text-transform:none;letter-spacing:0;font-family:var(--f-mono)">4</span>
+        <input type="range" id="sev" min="0" max="4" step="1" value="4" disabled>
+        <span class="sev"><span>0 mild</span><span>4 severe</span></span>
+      </label>
+      <button class="btn primary" id="run" disabled>Run all three models</button>
+      <label class="f" for="upload">Or your own point cloud
+        <input type="file" id="upload" accept=".xyz,.txt,.csv,.pts,.ply,.npy" disabled>
+      </label>
+      <p class="muted">.xyz / .txt / .csv (x y z per line), ASCII .ply or .npy, at least 256 points. It is centred and scaled to fit a unit sphere, like ModelNet.</p>
+      <div class="status" id="status" role="status" aria-live="polite">Starting…</div>
+      <div class="bar"><i id="prog"></i></div>
+    </div>
+
+    <div class="viewer" id="viewer">
+      <div class="vlabel" id="vlabel">—</div>
+      <div class="vtoggle"><label><input type="checkbox" id="ghost"> show clean object</label></div>
+      <div class="vlegend"><span><i style="background:var(--pt)"></i>object points</span><span><i style="background:var(--inj)"></i>injected points</span></div>
+    </div>
+
+    <div class="cards" id="cards">
+      <div class="card" id="c-pm" style="--c: var(--pm)"><div class="hd"><span class="nm">PointMLP</span><span class="ms"></span></div><div class="top">–</div><div class="t5"></div></div>
+      <div class="card" id="c-ada" style="--c: var(--ada)"><div class="hd"><span class="nm">PointMLP + AdaGAM</span><span class="ms"></span></div><div class="top">–</div><div class="t5"></div></div>
+      <div class="card" id="c-off" style="--c: var(--off)"><div class="hd"><span class="nm">AdaGAM, adaptation off (Δα = Δβ = 0)</span><span class="ms"></span></div><div class="top">–</div><div class="t5"></div></div>
+      <p class="check" id="check"></p>
+    </div>
+  </div>
+
+  <div class="presets">
+    <h3>Try these</h3>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <section class="info">
+    <h2>What you are looking at</h2>
+    <div class="cols">
+      <div class="panel"><h3>PointMLP</h3><p>Classifies a 3D point cloud in four stages. Each stage picks anchor points, gathers 24 neighbours around each, normalises the neighbourhood and rescales it with a learned scale α and shift β. After training, α and β are the same fixed numbers for every neighbourhood of every object.</p></div>
+      <div class="panel"><h3>AdaGAM (ours)</h3><p>Lets each neighbourhood choose its own correction. A tiny MLP reads the neighbourhood's own statistics and predicts Δα and Δβ. It starts as an exact copy of PointMLP and adds 0.11% compute.</p>
+        <div class="eq">f̂ = α·(1 + Δα(g))·f̃ + (β + Δβ(g))
+g = [mean ; max] over the 24 neighbours</div></div>
+      <div class="panel"><h3>The switch</h3><p>The third card runs the same trained AdaGAM with Δα and Δβ forced to zero. If the prediction changes, the adaptive part is what made the difference, for better or worse.</p></div>
+    </div>
+
+    <h2 style="margin-top:36px">Results on all 2,468 ModelNet-C test objects</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Model (trained on clean data, 200 epochs)</th><th>Clean</th><th>mCE ↓</th><th>Jitter</th><th>Rotate</th><th>Add-Global</th><th>Add-Global, sev 4</th><th>Params</th></tr></thead>
+      <tbody>
+        <tr><td>PointMLP</td><td>92.8%</td><td class="win">1.131</td><td class="win">53.3%</td><td>78.1%</td><td>64.0%</td><td>34.2%</td><td>13.24 M</td></tr>
+        <tr><td>PointMLP + AdaGAM</td><td class="win">93.0%</td><td>1.147</td><td class="lose">46.7%</td><td class="win">78.9%</td><td class="win">66.6%</td><td class="win">42.3%</td><td>13.42 M</td></tr>
+      </tbody></table></div>
+    <p class="muted" style="margin-top:8px">mCE: corruption error relative to DGCNN (lower is better), averaged over 7 corruptions × 5 severities. Overall the two models tie; AdaGAM wins clearly on severe outliers and loses on jitter.</p>
+    <figure><img src="fig_accuracy.png" alt="Accuracy per corruption for PointMLP, AdaGAM, AdaGAM with adaptation off, and PointMLP with BatchNorm re-estimated." loading="lazy">
+      <figcaption>Switching AdaGAM's adaptation off costs about 16 points on Add-Global but gains about 10 on Jitter: the controller, trained only on clean data, helps against outliers and mistakes noise for shape. Yellow: PointMLP with BatchNorm statistics re-estimated on a whole batch of corrupted test data, an upper bound that needs test-time data.</figcaption></figure>
+  </section>
+
+  <footer>
+    <span>Inference runs on your device with ONNX Runtime Web (WebGPU when available, otherwise CPU). Nothing is uploaded.</span>
+    <span>Data: ModelNet-C (Ren et al., ICML 2022) · PointMLP (Ma et al., ICLR 2022) · <a href="https://github.com/ankur777jinn/AdaGAM" target="_blank" rel="noopener">source</a></span>
+  </footer>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

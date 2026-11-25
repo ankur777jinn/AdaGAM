@@ -2,6 +2,8 @@
 
 **AdaGAM** is a lightweight, permutation-invariant, self-conditioned FiLM modulation layer for 3D point cloud networks. It replaces the static affine parameters $(\alpha, \beta)$ in PointMLP's local geometric grouper with input-conditioned residual modulation $(\Delta\alpha(g), \Delta\beta(g))$ computed from pooled neighborhood statistics, initialized at identity.
 
+**▶ Live demo (runs in your browser): https://ankur777jinn.github.io/AdaGAM/** — PointMLP, AdaGAM and AdaGAM with its adaptation switched off, on official ModelNet-C test objects or your own point cloud.
+
 ## Key Features
 
 - **Identity-Initialized Residual FiLM**: $\hat{f}_{j,k} = \alpha \odot (1 + \Delta\alpha(g_j)) \odot \tilde{f}_{j,k} + (\beta + \Delta\beta(g_j))$ with zero-initialized output projection (`+1.35%` params, `+0.11%` FLOPs at `r=8` on PointMLP).
@@ -61,6 +63,10 @@ python plot_tsne.py --base checkpoints/pointMLP-base-42/features.npz --adagam ch
 CUDA_VISIBLE_DEVICES=0 python find_showcase.py --base checkpoints/pointMLP-base-42 --adagam checkpoints/pointMLP-adagam-42 --data data/modelnet_c
 # 2) launch; open http://localhost:7860 (from a laptop: ssh -L 7860:localhost:7860 user@server)
 python demo_app.py --adagam_ckpt checkpoints/pointMLP-adagam-42 --base_ckpt checkpoints/pointMLP-base-42 --data data/modelnet_c
+
+# Static in-browser demo (GitHub Pages): exports both models to ONNX (checked against PyTorch),
+# packs demo objects and copies web/ -> web_build/ ; publish web_build/ on the gh-pages branch
+python build_web.py --data data/modelnet_c --base checkpoints/pointMLP-base-42 --adagam checkpoints/pointMLP-adagam-42 --out web_build
 ```
 
 ## Explainability: where each model looks, and whether AdaGAM repairs feature drift
