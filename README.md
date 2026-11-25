@@ -60,6 +60,31 @@ python plot_tsne.py --base checkpoints/pointMLP-base-42/features.npz --adagam ch
 python demo_app.py --adagam_ckpt checkpoints/pointMLP-adagam-42 --base_ckpt checkpoints/pointMLP-base-42 --data data/modelnet_c
 ```
 
+## Explainability: where each model looks, and whether AdaGAM repairs feature drift
+
+Both analyses run on trained checkpoints only (no extra training) and take well under an hour on one GPU.
+Check them first on CPU with fake data: `python smoke_test_xai.py`.
+
+```bash
+cd classification_ModelNet40
+
+# 1. Point saliency, PointMLP vs AdaGAM, on the same ModelNet-C objects
+#    (Zheng et al. ICCV 2019 saliency; focus score; attention on injected points; faithfulness drop curves)
+CUDA_VISIBLE_DEVICES=0 python xai_saliency.py --base checkpoints/pointMLP-base-42 \
+    --adagam checkpoints/pointMLP-adagam-42 --data data/modelnet_c --out xai_out/saliency
+#  -> fig_focus_shift.png, fig_outlier_attention.png, fig_drop_curves.png, saliency3d_obj*.html
+
+# 2. Feature drift per stage: linear CKA(clean, corrupted) for PointMLP, AdaGAM,
+#    AdaGAM with adaptation switched off, and PointMLP with BatchNorm re-estimated (Schneider et al. 2020)
+CUDA_VISIBLE_DEVICES=0 python cka_drift.py --base checkpoints/pointMLP-base-42 \
+    --adagam checkpoints/pointMLP-adagam-42 --data data/modelnet_c --out xai_out/cka
+#  -> fig_cka_stages.png, fig_cka_gain_heatmap.png, fig_accuracy.png, cka_results.json
+```
+
+Read the drop curves before trusting any saliency figure: removing the most salient points must hurt accuracy
+far more than removing random points. CKA is descriptive (similarity of representations), not proof of a
+change in function; BN-adapt needs a whole batch of one corruption, AdaGAM adapts per object.
+
 ## References
 
 - **PointMLP**: Ma, X., Qin, C., You, H., Ran, H., & Fu, Y. (2022). *Rethinking Network Design and Local Geometry in Point Cloud: A Simple Residual MLP Framework*. ICLR 2022.
