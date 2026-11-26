@@ -2,9 +2,9 @@
 Build the static, in-browser live demo (GitHub Pages) into --out.
 
     python build_web.py --data <modelnet_c dir> --base checkpoints/pointMLP-base-42 \
-        --adagam checkpoints/pointMLP-adagam-42 --out web_build
+        --adagam checkpoints/pointMLP-adagam-42 [--adagam_aug checkpoints/pointMLP-adagam_aug-42] --out web_build
 
-  1. exports both trained models to ONNX (export_onnx.py) and checks them against PyTorch
+  1. exports the trained models (PointMLP, AdaGAM, optionally the corruption-trained AdaGAM) to ONNX (export_onnx.py) and checks them against PyTorch
   2. picks demo objects: the first test object of each class that both models get right on
      clean data, plus --extra object ids (showcase cases)
   3. packs every official ModelNet-C version of those objects (clean + 7 x 5) as int16
@@ -38,10 +38,11 @@ def fname(c, s):
 
 
 class Runner:
-    def __init__(self, base_path, ada_path):
+    def __init__(self, base_path, ada_path, aug_path=None):
         so = ort.SessionOptions()
         self.base = ort.InferenceSession(base_path, so, providers=["CPUExecutionProvider"])
         self.ada = ort.InferenceSession(ada_path, so, providers=["CPUExecutionProvider"])
+        self.aug = ort.InferenceSession(aug_path, so, providers=["CPUExecutionProvider"]) if aug_path else None
 
     @staticmethod
     def _feed(sess, xyz, adapt):
@@ -53,7 +54,10 @@ class Runner:
         b = self.base.run(None, self._feed(self.base, xyz, 1.0))[0][0]
         a = self.ada.run(None, self._feed(self.ada, xyz, 1.0))[0][0]
         o = self.ada.run(None, self._feed(self.ada, xyz, 0.0))[0][0]
-        return b, a, o
+        if self.aug is None:
+            return b, a, o
+        g = self.aug.run(None, self._feed(self.aug, xyz, 1.0))[0][0]
+        return b, a, o, g
 
 
 def top5(p):
@@ -75,6 +79,7 @@ def main():
     p.add_argument("--data", required=True)
     p.add_argument("--base", required=True)
     p.add_argument("--adagam", required=True)
+    p.add_argument("--adagam_aug", default=None, help="corruption-trained AdaGAM (optional 4th model)")
     p.add_argument("--out", default="web_build")
     p.add_argument("--extra", default="305,320,1089,1156,2333,103,2425,967,768,2216,2314,733,173,1913")
     a = p.parse_args()
@@ -90,13 +95,14 @@ def main():
     rng = np.random.RandomState(1)
     clouds = [rng.randn(n, 3).astype(np.float32) * 0.4 for n in (1024, 1074, 524)]
     paths = {}
-    for key, ck in [("pointmlp", a.base), ("adagam", a.adagam)]:
+    models = [("pointmlp", a.base), ("adagam", a.adagam)] + ([("adagam_aug", a.adagam_aug)] if a.adagam_aug else [])
+    for key, ck in models:
         net, _ = load_model(ck, "cpu")
         net.eval()
         paths[key] = os.path.join(out, "models", f"{key}.onnx")
         ex.export(net, paths[key])
         ex.check(net, paths[key], clouds)
-    run = Runner(paths["pointmlp"], paths["adagam"])
+    run = Runner(paths["pointmlp"], paths["adagam"], paths.get("adagam_aug"))
 
     # 2. objects
     files = {c: h5py.File(os.path.join(a.data, fname(*c)), "r") for c in CONDS}
@@ -105,7 +111,7 @@ def main():
     chosen = []
     for k in range(40):
         for i in np.where(label == k)[0]:
-            b, ad, _ = run(clean[i])
+            b, ad = run(clean[i])[:2]
             if b.argmax() == k and ad.argmax() == k:
                 chosen.append(int(i))
                 break
@@ -114,7 +120,7 @@ def main():
     print(f"{len(ids)} objects")
 
     # 3 + 4. pack and predict
-    manifest = {"classes": CLASSES, "conditions": [f"{c}_{s}" if c != "clean" else "clean" for c, s in CONDS],
+    manifest = {"models": [k for k, _ in models], "classes": CLASSES, "conditions": [f"{c}_{s}" if c != "clean" else "clean" for c, s in CONDS],
                 "objects": []}
     preds = {}
     for n, i in enumerate(ids):
@@ -128,8 +134,7 @@ def main():
             mask = injected_mask(arrays[0], x) if c.startswith("add") else np.zeros(len(x), bool)
             meta.append({"n": int(len(x)), "inj": int(mask.sum())})
             blob += q.tobytes() + np.packbits(mask).tobytes()
-            b, ad, o = run(xq)
-            preds[f"{i}/{c if c == 'clean' else f'{c}_{s}'}"] = [top5(b), top5(ad), top5(o)]
+            preds[f"{i}/{c if c == 'clean' else f'{c}_{s}'}"] = [top5(r) for r in run(xq)]
         with open(os.path.join(out, "objects", f"{i}.bin"), "wb") as f:
             f.write(bytes(blob))
         manifest["objects"].append({"id": i, "label": int(label[i]), "scale": scale, "conds": meta})
@@ -140,12 +145,13 @@ def main():
     for key, v in preds.items():
         i, cond = key.split("/")
         y = next(o["label"] for o in manifest["objects"] if o["id"] == int(i))
-        b, ad, o = (r[0][0] == y for r in v)
+        b, ad, o = (r[0][0] == y for r in v[:3])
+        g = len(v) > 3 and v[3][0][0] == y
         if cond.startswith("add_global") and ad and not b and not o:
             presets.append({"id": int(i), "cond": cond, "kind": "rescue", "conf": v[1][0][1]})
         if cond.startswith("jitter") and o and not ad:
-            presets.append({"id": int(i), "cond": cond, "kind": "hurt", "conf": v[2][0][1]})
-    presets.sort(key=lambda r: -r["conf"])
+            presets.append({"id": int(i), "cond": cond, "kind": "hurt", "conf": v[2][0][1], "cured": bool(g)})
+    presets.sort(key=lambda r: (not r.get("cured", False), -r["conf"]))
     manifest["presets"] = presets
     with open(os.path.join(out, "manifest.json"), "w") as f:
         json.dump(manifest, f, separators=(",", ":"))

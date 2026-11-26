@@ -94,13 +94,14 @@ async function fetchWithProgress(url, onp) {
 
 async function loadModels() {
   ort.env.wasm.numThreads = self.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurrency || 1) : 1;
-  const files = ["pointmlp", "adagam"], bufs = {};
+  const files = manifest.models || ["pointmlp", "adagam"], bufs = {};
   for (let i = 0; i < files.length; i++) {
     setStatus(`Downloading ${files[i]} model (≈53 MB, cached after the first visit)…`);
     bufs[files[i]] = await fetchWithProgress(`models/${files[i]}.onnx`, (f) => setProg((i + f) / files.length));
   }
   const tryEP = async (ep) => ({ pm: await ort.InferenceSession.create(bufs.pointmlp, { executionProviders: [ep] }),
-                                 ada: await ort.InferenceSession.create(bufs.adagam, { executionProviders: [ep] }) });
+                                 ada: await ort.InferenceSession.create(bufs.adagam, { executionProviders: [ep] }),
+                                 aug: bufs.adagam_aug ? await ort.InferenceSession.create(bufs.adagam_aug, { executionProviders: [ep] }) : null });
   if (navigator.gpu) {
     try { setStatus("Starting models on your GPU (WebGPU)…"); sessions = await tryEP("webgpu"); backend = "GPU (WebGPU)"; }
     catch (e) { console.warn("WebGPU failed, using CPU", e); sessions = null; }
@@ -196,8 +197,9 @@ function card(id, probs, ms, truth) {
   el.querySelector(".ms").textContent = ms ? `${ms.toFixed(0)} ms` : "";
   el.querySelector(".t5").innerHTML = top.map((i) => `<div><span>${nice(manifest.classes[i])}</span><b style="width:${Math.max(1, probs[i] * 100)}%"></b><em>${(probs[i] * 100).toFixed(1)}</em></div>`).join("");
 }
+const cardIds = () => (sessions && sessions.aug ? ["c-pm", "c-ada", "c-off", "c-aug"] : ["c-pm", "c-ada", "c-off"]);
 function clearCards() {
-  for (const id of ["c-pm", "c-ada", "c-off"]) {
+  for (const id of cardIds()) {
     const el = $(id); el.classList.remove("right", "wrong");
     el.querySelector(".top").textContent = "running…"; el.querySelector(".t5").innerHTML = ""; el.querySelector(".ms").textContent = "";
   }
@@ -217,9 +219,14 @@ async function infer(xyz, n, truth, expKey) {
     const ada = await runModel(sessions.ada, feeds, 1); card("c-ada", ada.probs, ada.ms, truth);
     setStatus(`Running AdaGAM with adaptation off…`);
     const off = await runModel(sessions.ada, feeds, 0); card("c-off", off.probs, off.ms, truth);
+    const got = [pm.probs, ada.probs, off.probs];
+    if (sessions.aug) {
+      setStatus(`Running AdaGAM retrained on corrupted copies…`);
+      const aug = await runModel(sessions.aug, feeds, 1); card("c-aug", aug.probs, aug.ms, truth); got.push(aug.probs);
+    }
     setStatus(`Done on ${backend}. Grouping ${tg.toFixed(0)} ms.`);
     if (expKey && expected[expKey]) {
-      const exp = expected[expKey], got = [pm.probs, ada.probs, off.probs];
+      const exp = expected[expKey].slice(0, got.length);
       const same = exp.every((e, i) => e[0][0] === [...got[i].keys()].sort((a, b) => got[i][b] - got[i][a])[0]);
       const dev = Math.max(...exp.map((e, i) => Math.abs(e[0][1] - got[i][e[0][0]])));
       $("check").textContent = same ? `✓ Matches the offline PyTorch→ONNX run of this input (largest difference ${(dev * 100).toFixed(2)} points).`
@@ -289,7 +296,7 @@ function presetChips() {
   $("chips").innerHTML = pick.map((p, i) => {
     const o = manifest.objects.find((x) => x.id === p.id), [c, s] = [p.cond.replace(/_\d$/, ""), p.cond.slice(-1)];
     const col = p.kind === "rescue" ? "var(--ada)" : "var(--off)";
-    const txt = p.kind === "rescue" ? "AdaGAM rescues it" : "adaptation hurts it";
+    const txt = p.kind === "rescue" ? "AdaGAM rescues it" : p.cured && sessions && sessions.aug ? "adaptation hurts it, retraining cures it" : "adaptation hurts it";
     return `<button class="chip" data-i="${i}"><i style="background:${col}"></i>${nice(manifest.classes[o.label])} #${o.id} · ${nice(c)} ${s} · ${txt}</button>`;
   }).join("");
   $("chips").querySelectorAll(".chip").forEach((b) => b.addEventListener("click", () => {
@@ -313,6 +320,7 @@ function presetChips() {
     const first = await loadObject(+$("obj").value), c = first.conds.add_global_4;
     show(c.xyz, c.n, c.mask, first.conds.clean.xyz, first.conds.clean.n, `#${first.meta.id} ${nice(manifest.classes[first.meta.label])} · add global, severity 4 · ${c.n} points`);
     await loadModels();
+    if (sessions.aug) { $("c-aug").hidden = false; presetChips(); }
     for (const id of ["obj", "corr", "sev", "run", "upload"]) $(id).disabled = false;
     setStatus(`Ready on ${backend}. Pick an object or a case below.`);
     await runOfficial();
