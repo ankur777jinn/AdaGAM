@@ -14,7 +14,7 @@
 
 ## Results (ModelNet-C, all 2,468 test objects × 7 corruptions × 5 severities)
 
-Single run per model (seed 42), last-epoch checkpoints. mCE / RmCE are relative to DGCNN (1.0, lower is better). Full table: [`results/results.md`](results/results.md); per-run JSON in [`results/runs/`](results/runs/).
+Single run per model (seed 42), last-epoch checkpoints. mCE / R mCE are relative to DGCNN (1.0, lower is better). Full table: [`results/results.md`](results/results.md); per-run JSON in [`results/runs/`](results/runs/).
 
 **Main result: trained on clean data only (protocol-compliant), 200 epochs**
 
