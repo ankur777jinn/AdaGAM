@@ -1,6 +1,6 @@
 # AdaGAM: Adaptive Geometric Affine Modulation for Robust 3D Point Cloud Classification
 
-> **DAC-301 Deep Learning Course Project** · [Ankur Dahiya](https://github.com/ankur777jinn), [Gaurav Kumar](https://github.com/sekiroQ-Q), Diptanshu
+> **DAC-301 Deep Learning Course Project** · [Ankur Dahiya](https://github.com/ankur777jinn), [Gaurav Kumar](https://github.com/sekiroQ-Q), [Diptanshu](https://github.com/diptanshup-art)
 
 
 **AdaGAM** is a lightweight, permutation-invariant, self-conditioned FiLM modulation layer for 3D point cloud networks. It replaces the static affine parameters $(\alpha, \beta)$ in PointMLP's local geometric grouper with input-conditioned residual modulation $(\Delta\alpha(g), \Delta\beta(g))$ computed from pooled neighborhood statistics, initialized at identity.
