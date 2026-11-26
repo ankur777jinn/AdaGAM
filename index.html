@@ -13,13 +13,13 @@
 :root {
   --bg: #f4f5f3; --surface: #ffffff; --sunk: #e9ebe7; --fg: #15181c; --fg2: #4c535a; --fg3: #7b8289; --line: #d9ddd7;
   --viewer: #0f1316; --viewer-fg: #dfe5ea; --pt: #9fb6cc; --inj: #ff8a3d; --ghost: #4a5560;
-  --pm: #2a78d6; --ada: #eb6834; --off: #1baf7a; --good: #1c8a4f; --bad: #c43b33; --good-bg: #e3f3ea; --bad-bg: #fbe7e5;
+  --pm: #2a78d6; --ada: #eb6834; --off: #1baf7a; --aug: #7a5ad8; --good: #1c8a4f; --bad: #c43b33; --good-bg: #e3f3ea; --bad-bg: #fbe7e5;
   --f-display: "Sora", "Segoe UI", system-ui, sans-serif; --f-body: "Inter", "Segoe UI", system-ui, sans-serif;
   --f-mono: "JetBrains Mono", ui-monospace, Consolas, monospace; color-scheme: light;
 }
 @media (prefers-color-scheme: dark) { :root {
   --bg: #0d1013; --surface: #151a1e; --sunk: #1c2227; --fg: #e8ecef; --fg2: #a9b1b8; --fg3: #7c858d; --line: #283036;
-  --viewer: #080a0c; --pt: #8fb0d0; --ghost: #3a444d; --pm: #5b9be6; --ada: #f08a5d; --off: #3cc995;
+  --viewer: #080a0c; --pt: #8fb0d0; --ghost: #3a444d; --pm: #5b9be6; --ada: #f08a5d; --off: #3cc995; --aug: #a98bf5;
   --good: #4fd08a; --bad: #f27a72; --good-bg: #15301f; --bad-bg: #3a1c1a; color-scheme: dark; } }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -39,7 +39,7 @@ h3 { font: 600 1rem/1.3 var(--f-display); margin: 0 0 8px; }
 .btn:focus-visible, select:focus-visible, input:focus-visible, .chip:focus-visible { outline: 2px solid var(--pm); outline-offset: 2px; }
 
 .demo { display: grid; grid-template-columns: 280px minmax(0, 1fr) 330px; gap: 16px; align-items: start; }
-@media (max-width: 1100px) { .demo { grid-template-columns: 260px minmax(0, 1fr); } .cards { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 1100px) { .demo { grid-template-columns: 260px minmax(0, 1fr); } .cards { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .demo { grid-template-columns: minmax(0, 1fr); } .cards { grid-template-columns: minmax(0, 1fr); } }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 14px; min-width: 0; }
 label.f { display: grid; gap: 6px; font: 600 12px/1.2 var(--f-body); color: var(--fg2); text-transform: uppercase; letter-spacing: .06em; }
@@ -110,7 +110,7 @@ footer a { color: var(--fg2); }
   <header>
     <div>
       <h1>AdaGAM Live</h1>
-      <p class="sub">Two trained point-cloud classifiers running in your browser on corrupted 3D objects from ModelNet-C. <span style="color:var(--pm);font-weight:600">PointMLP</span>, <span style="color:var(--ada);font-weight:600">PointMLP + AdaGAM</span>, and the same AdaGAM with its <span style="color:var(--off);font-weight:600">adaptation switched off</span>.</p>
+      <p class="sub">Trained point-cloud classifiers running in your browser on corrupted 3D objects from ModelNet-C. <span style="color:var(--pm);font-weight:600">PointMLP</span>, <span style="color:var(--ada);font-weight:600">PointMLP + AdaGAM</span>, the same AdaGAM with its <span style="color:var(--off);font-weight:600">adaptation switched off</span>, and <span style="color:var(--aug);font-weight:600">AdaGAM retrained on corrupted copies</span>.</p>
     </div>
     <div class="links">
       <a class="btn" href="https://github.com/ankur777jinn/AdaGAM" target="_blank" rel="noopener">Code on GitHub</a>
@@ -138,7 +138,7 @@ footer a { color: var(--fg2); }
         <input type="range" id="sev" min="0" max="4" step="1" value="4" disabled>
         <span class="sev"><span>0 mild</span><span>4 severe</span></span>
       </label>
-      <button class="btn primary" id="run" disabled>Run all three models</button>
+      <button class="btn primary" id="run" disabled>Run all models</button>
       <label class="f" for="upload">Or your own point cloud
         <input type="file" id="upload" accept=".xyz,.txt,.csv,.pts,.ply,.npy" disabled>
       </label>
@@ -157,6 +157,7 @@ footer a { color: var(--fg2); }
       <div class="card" id="c-pm" style="--c: var(--pm)"><div class="hd"><span class="nm">PointMLP</span><span class="ms"></span></div><div class="top">–</div><div class="t5"></div></div>
       <div class="card" id="c-ada" style="--c: var(--ada)"><div class="hd"><span class="nm">PointMLP + AdaGAM</span><span class="ms"></span></div><div class="top">–</div><div class="t5"></div></div>
       <div class="card" id="c-off" style="--c: var(--off)"><div class="hd"><span class="nm">AdaGAM, adaptation off (Δα = Δβ = 0)</span><span class="ms"></span></div><div class="top">–</div><div class="t5"></div></div>
+      <div class="card" id="c-aug" style="--c: var(--aug)" hidden><div class="hd"><span class="nm">AdaGAM, retrained on corrupted copies</span><span class="ms"></span></div><div class="top">–</div><div class="t5"></div></div>
       <p class="check" id="check"></p>
     </div>
   </div>
@@ -173,7 +174,7 @@ footer a { color: var(--fg2); }
       <div class="panel"><h3>AdaGAM (ours)</h3><p>Lets each neighbourhood choose its own correction. A tiny MLP reads the neighbourhood's own statistics and predicts Δα and Δβ. It starts as an exact copy of PointMLP and adds 0.11% compute.</p>
         <div class="eq">f̂ = α·(1 + Δα(g))·f̃ + (β + Δβ(g))
 g = [mean ; max] over the 24 neighbours</div></div>
-      <div class="panel"><h3>The switch</h3><p>The third card runs the same trained AdaGAM with Δα and Δβ forced to zero. If the prediction changes, the adaptive part is what made the difference, for better or worse.</p></div>
+      <div class="panel"><h3>The switch</h3><p>The third card runs the same trained AdaGAM with Δα and Δβ forced to zero. If the prediction changes, the adaptive part is what made the difference, for better or worse.</p><p>The fourth card is AdaGAM retrained on clean plus corrupted copies with a consistency loss (jitter, scale, Drop-Global and Add-Global; the other three corruptions are never seen). With that training signal it stops mistaking noise for shape.</p></div>
     </div>
 
     <h2 style="margin-top:36px">Results on all 2,468 ModelNet-C test objects</h2>
@@ -183,7 +184,7 @@ g = [mean ; max] over the 24 neighbours</div></div>
         <tr><td>PointMLP</td><td>92.8%</td><td class="win">1.131</td><td class="win">53.3%</td><td>78.1%</td><td>64.0%</td><td>34.2%</td><td>13.24 M</td></tr>
         <tr><td>PointMLP + AdaGAM</td><td class="win">93.0%</td><td>1.147</td><td class="lose">46.7%</td><td class="win">78.9%</td><td class="win">66.6%</td><td class="win">42.3%</td><td>13.42 M</td></tr>
       </tbody></table></div>
-    <p class="muted" style="margin-top:8px">mCE: corruption error relative to DGCNN (lower is better), averaged over 7 corruptions × 5 severities. Overall the two models tie; AdaGAM wins clearly on severe outliers and loses on jitter.</p>
+    <p class="muted" style="margin-top:8px">mCE: corruption error relative to DGCNN (lower is better), averaged over 7 corruptions × 5 severities. Overall the two models tie; AdaGAM wins clearly on severe outliers and loses on jitter. Retrained on clean + corrupted copies (100 epochs), AdaGAM reaches 91.4% on jitter (from 46.7%), mCE 0.628, and loses 13% less accuracy under corruption than PointMLP retrained the same way (RmCE 0.371 vs 0.428).</p>
     <figure><img src="fig_accuracy.png" alt="Accuracy per corruption for PointMLP, AdaGAM, AdaGAM with adaptation off, and PointMLP with BatchNorm re-estimated." loading="lazy">
       <figcaption>Switching AdaGAM's adaptation off costs about 16 points on Add-Global but gains about 10 on Jitter: the controller, trained only on clean data, helps against outliers and mistakes noise for shape. Yellow: PointMLP with BatchNorm statistics re-estimated on a whole batch of corrupted test data, an upper bound that needs test-time data.</figcaption></figure>
   </section>
@@ -193,6 +194,6 @@ g = [mean ; max] over the 24 neighbours</div></div>
     <span>Data: ModelNet-C (Ren et al., ICML 2022) · PointMLP (Ma et al., ICLR 2022) · <a href="https://github.com/ankur777jinn/AdaGAM" target="_blank" rel="noopener">source</a></span>
   </footer>
 </div>
-<script type="module" src="app.js?v=2"></script>
+<script type="module" src="app.js?v=3"></script>
 </body>
 </html>
