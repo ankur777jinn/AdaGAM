@@ -1,6 +1,6 @@
 # AdaGAM-3D: Adaptive Geometric Affine Modulation for Robust Point Cloud Classification
 
-DAC-301 Deep Learning course project · Ankur Dahiya, Gaurav, Diptanshu
+DAC-301 Deep Learning course project · Ankur Dahiya, Gaurav kumar, Diptanshu
 
 PointMLP (Ma et al., ICLR 2022) normalises every local neighbourhood and then applies a learned affine
 `α·x + β`. After training, `α` and `β` are fixed numbers, whatever input arrives. **AdaGAM** makes them
