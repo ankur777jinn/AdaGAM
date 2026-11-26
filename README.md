@@ -12,6 +12,32 @@
 - **Per-Point Adaptation Saliency (`saliency_map.py`, `plot_saliency.py`)**: Projects Stage-1 $|\Delta\alpha|$ magnitudes back onto 3D points via $k$-NN membership for interactive 3D visualization.
 - **Live Inference Screening (`demo_app.py`)**: Gradio + Plotly 3D web app with a live counterfactual `AdaGAM ON / OFF (Δα=0, Δβ=0)` toggle, corruption/severity controls, and stage-wise $|\Delta\alpha|$ telemetry.
 
+## Results (ModelNet-C, all 2,468 test objects × 7 corruptions × 5 severities)
+
+Single run per model (seed 42), last-epoch checkpoints. mCE / RmCE are relative to DGCNN (1.0, lower is better). Full table: [`results/results.md`](results/results.md); per-run JSON in [`results/runs/`](results/runs/).
+
+**Main result: trained on clean data only (protocol-compliant), 200 epochs**
+
+| Model | Params | Clean | mCE ↓ | Jitter | Rotate | Add-Global | Add-Global sev 4 |
+|---|---|---|---|---|---|---|---|
+| PointMLP | 13.24 M | 92.8 | **1.131** | **53.3** | 78.1 | 64.0 | 34.2 |
+| PointMLP + AdaGAM (r = 8) | 13.42 M (+1.35%), +0.11% FLOPs | **93.0** | 1.147 | 46.7 | **78.9** | **66.6** | **42.3** |
+
+Overall a tie (mCE ratio 1.009). AdaGAM is much more robust to severe outliers (+8.0 points at Add-Global severity 4) and less robust to jitter. Switching its adaptation off (same weights, Δα = Δβ = 0) costs 16 points on Add-Global but gains 10 on Jitter: a controller trained only on clean data mistakes noise for shape.
+
+**Second experiment: trained on clean + corrupted copies (Jitter, Drop-Global, Add-Global, Scale) with a consistency loss, 100 epochs. Not leaderboard-comparable.**
+
+| Model | Clean | mCE ↓ | RmCE ↓ | Unseen avg | Drop-Local* | Add-Local* | Rotate* | Jitter |
+|---|---|---|---|---|---|---|---|---|
+| PointMLP | **92.9** | **0.621** | 0.428 | 82.0 | 84.5 | 82.9 | 78.4 | **91.5** |
+| PointMLP + AdaGAM | 92.3 | 0.628 | **0.371** | **82.5** | **85.5** | **83.4** | **78.6** | 91.4 |
+
+\* never seen in training. With a training signal the jitter failure disappears (46.7 → 91.4), the adaptation becomes essential (switching it off now costs 13 points on Jitter, 27 on Add-Global) and AdaGAM edges out PointMLP on all three unseen corruptions (within single-run noise).
+
+Figures: [`results/figures/`](results/figures/) (accuracy vs severity, CE bars, |Δα| heatmaps, corruption gallery) and [`results/xai/`](results/xai/) (saliency and CKA analyses). Related work and the novelty claim: [`RELATED_WORK.md`](RELATED_WORK.md).
+
+![Accuracy vs severity](results/figures/fig_oa_vs_severity.png)
+
 ## Setup (RTX A6000 / CUDA)
 
 ```bash

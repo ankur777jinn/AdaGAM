@@ -1,0 +1,516 @@
+{
+  "n": 400,
+  "severities_shown": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "grid": {
+    "clean": {
+      "PointMLP": {
+        "acc": 0.91,
+        "focus": 0.2202499806880951
+      },
+      "AdaGAM": {
+        "acc": 0.905,
+        "focus": 0.221226766705513
+      }
+    },
+    "scale_0": {
+      "PointMLP": {
+        "acc": 0.905,
+        "focus": 0.21970424056053162
+      },
+      "AdaGAM": {
+        "acc": 0.905,
+        "focus": 0.22296614944934845
+      }
+    },
+    "scale_1": {
+      "PointMLP": {
+        "acc": 0.9175,
+        "focus": 0.2220800518989563
+      },
+      "AdaGAM": {
+        "acc": 0.91,
+        "focus": 0.2236585170030594
+      }
+    },
+    "scale_2": {
+      "PointMLP": {
+        "acc": 0.915,
+        "focus": 0.22159072756767273
+      },
+      "AdaGAM": {
+        "acc": 0.905,
+        "focus": 0.22335632145404816
+      }
+    },
+    "scale_3": {
+      "PointMLP": {
+        "acc": 0.9125,
+        "focus": 0.22089286148548126
+      },
+      "AdaGAM": {
+        "acc": 0.9075,
+        "focus": 0.224116250872612
+      }
+    },
+    "scale_4": {
+      "PointMLP": {
+        "acc": 0.9025,
+        "focus": 0.22193460166454315
+      },
+      "AdaGAM": {
+        "acc": 0.91,
+        "focus": 0.22490644454956055
+      }
+    },
+    "jitter_0": {
+      "PointMLP": {
+        "acc": 0.89,
+        "focus": 0.21963649988174438
+      },
+      "AdaGAM": {
+        "acc": 0.8875,
+        "focus": 0.22147253155708313
+      }
+    },
+    "jitter_1": {
+      "PointMLP": {
+        "acc": 0.8025,
+        "focus": 0.21690648794174194
+      },
+      "AdaGAM": {
+        "acc": 0.7575,
+        "focus": 0.21756286919116974
+      }
+    },
+    "jitter_2": {
+      "PointMLP": {
+        "acc": 0.5825,
+        "focus": 0.21450287103652954
+      },
+      "AdaGAM": {
+        "acc": 0.47,
+        "focus": 0.2155967652797699
+      }
+    },
+    "jitter_3": {
+      "PointMLP": {
+        "acc": 0.235,
+        "focus": 0.21322576701641083
+      },
+      "AdaGAM": {
+        "acc": 0.155,
+        "focus": 0.21399320662021637
+      }
+    },
+    "jitter_4": {
+      "PointMLP": {
+        "acc": 0.07,
+        "focus": 0.21231208741664886
+      },
+      "AdaGAM": {
+        "acc": 0.06,
+        "focus": 0.2147805094718933
+      }
+    },
+    "rotate_0": {
+      "PointMLP": {
+        "acc": 0.9,
+        "focus": 0.22005301713943481
+      },
+      "AdaGAM": {
+        "acc": 0.91,
+        "focus": 0.22163839638233185
+      }
+    },
+    "rotate_1": {
+      "PointMLP": {
+        "acc": 0.9025,
+        "focus": 0.2196730077266693
+      },
+      "AdaGAM": {
+        "acc": 0.8675,
+        "focus": 0.2217351198196411
+      }
+    },
+    "rotate_2": {
+      "PointMLP": {
+        "acc": 0.81,
+        "focus": 0.2204720675945282
+      },
+      "AdaGAM": {
+        "acc": 0.7975,
+        "focus": 0.22083328664302826
+      }
+    },
+    "rotate_3": {
+      "PointMLP": {
+        "acc": 0.685,
+        "focus": 0.21836456656455994
+      },
+      "AdaGAM": {
+        "acc": 0.6725,
+        "focus": 0.22056423127651215
+      }
+    },
+    "rotate_4": {
+      "PointMLP": {
+        "acc": 0.5375,
+        "focus": 0.21903878450393677
+      },
+      "AdaGAM": {
+        "acc": 0.545,
+        "focus": 0.21967025101184845
+      }
+    },
+    "dropout_global_0": {
+      "PointMLP": {
+        "acc": 0.9025,
+        "focus": 0.2257760763168335
+      },
+      "AdaGAM": {
+        "acc": 0.9025,
+        "focus": 0.2265501618385315
+      }
+    },
+    "dropout_global_1": {
+      "PointMLP": {
+        "acc": 0.895,
+        "focus": 0.2312202900648117
+      },
+      "AdaGAM": {
+        "acc": 0.89,
+        "focus": 0.23176263272762299
+      }
+    },
+    "dropout_global_2": {
+      "PointMLP": {
+        "acc": 0.855,
+        "focus": 0.2380024492740631
+      },
+      "AdaGAM": {
+        "acc": 0.8425,
+        "focus": 0.23758536577224731
+      }
+    },
+    "dropout_global_3": {
+      "PointMLP": {
+        "acc": 0.645,
+        "focus": 0.24726897478103638
+      },
+      "AdaGAM": {
+        "acc": 0.6625,
+        "focus": 0.24393878877162933
+      }
+    },
+    "dropout_global_4": {
+      "PointMLP": {
+        "acc": 0.2875,
+        "focus": 0.26044556498527527
+      },
+      "AdaGAM": {
+        "acc": 0.2725,
+        "focus": 0.258115291595459
+      }
+    },
+    "dropout_local_0": {
+      "PointMLP": {
+        "acc": 0.88,
+        "focus": 0.22111965715885162
+      },
+      "AdaGAM": {
+        "acc": 0.89,
+        "focus": 0.2226967215538025
+      }
+    },
+    "dropout_local_1": {
+      "PointMLP": {
+        "acc": 0.87,
+        "focus": 0.22653159499168396
+      },
+      "AdaGAM": {
+        "acc": 0.8675,
+        "focus": 0.22833743691444397
+      }
+    },
+    "dropout_local_2": {
+      "PointMLP": {
+        "acc": 0.7925,
+        "focus": 0.23362094163894653
+      },
+      "AdaGAM": {
+        "acc": 0.7975,
+        "focus": 0.2361786961555481
+      }
+    },
+    "dropout_local_3": {
+      "PointMLP": {
+        "acc": 0.705,
+        "focus": 0.2430380880832672
+      },
+      "AdaGAM": {
+        "acc": 0.67,
+        "focus": 0.24313320219516754
+      }
+    },
+    "dropout_local_4": {
+      "PointMLP": {
+        "acc": 0.5025,
+        "focus": 0.2502017021179199
+      },
+      "AdaGAM": {
+        "acc": 0.515,
+        "focus": 0.25074514746665955
+      }
+    },
+    "add_global_0": {
+      "PointMLP": {
+        "acc": 0.86,
+        "focus": 0.22570522129535675,
+        "outlier_attention": 0.008442359045147896,
+        "outlier_fraction": 0.00687862669245648
+      },
+      "AdaGAM": {
+        "acc": 0.8575,
+        "focus": 0.22680248320102692,
+        "outlier_attention": 0.007509238552302122,
+        "outlier_fraction": 0.00687862669245648
+      }
+    },
+    "add_global_1": {
+      "PointMLP": {
+        "acc": 0.7875,
+        "focus": 0.22833217680454254,
+        "outlier_attention": 0.018350834026932716,
+        "outlier_fraction": 0.013879310344827585
+      },
+      "AdaGAM": {
+        "acc": 0.76,
+        "focus": 0.22812332212924957,
+        "outlier_attention": 0.017254840582609177,
+        "outlier_fraction": 0.013879310344827585
+      }
+    },
+    "add_global_2": {
+      "PointMLP": {
+        "acc": 0.66,
+        "focus": 0.2299073189496994,
+        "outlier_attention": 0.030981607735157013,
+        "outlier_fraction": 0.0206095825426945
+      },
+      "AdaGAM": {
+        "acc": 0.67,
+        "focus": 0.22803594172000885,
+        "outlier_attention": 0.03153666481375694,
+        "outlier_fraction": 0.0206095825426945
+      }
+    },
+    "add_global_3": {
+      "PointMLP": {
+        "acc": 0.4575,
+        "focus": 0.23006825149059296,
+        "outlier_attention": 0.04685047268867493,
+        "outlier_fraction": 0.027011278195488722
+      },
+      "AdaGAM": {
+        "acc": 0.5325,
+        "focus": 0.22592341899871826,
+        "outlier_attention": 0.04571593180298805,
+        "outlier_fraction": 0.027011278195488722
+      }
+    },
+    "add_global_4": {
+      "PointMLP": {
+        "acc": 0.3275,
+        "focus": 0.22976543009281158,
+        "outlier_attention": 0.0671372339129448,
+        "outlier_fraction": 0.033843109869646185
+      },
+      "AdaGAM": {
+        "acc": 0.385,
+        "focus": 0.22613507509231567,
+        "outlier_attention": 0.06439432501792908,
+        "outlier_fraction": 0.033843109869646185
+      }
+    },
+    "add_local_0": {
+      "PointMLP": {
+        "acc": 0.775,
+        "focus": 0.22049254179000854,
+        "outlier_attention": 0.030401673167943954,
+        "outlier_fraction": 0.015260231316725978
+      },
+      "AdaGAM": {
+        "acc": 0.7425,
+        "focus": 0.22103260457515717,
+        "outlier_attention": 0.02937510423362255,
+        "outlier_fraction": 0.015260231316725978
+      }
+    },
+    "add_local_1": {
+      "PointMLP": {
+        "acc": 0.6875,
+        "focus": 0.22011299431324005,
+        "outlier_attention": 0.04979472979903221,
+        "outlier_fraction": 0.028462009803921568
+      },
+      "AdaGAM": {
+        "acc": 0.69,
+        "focus": 0.2205379456281662,
+        "outlier_attention": 0.04840349033474922,
+        "outlier_fraction": 0.028462009803921568
+      }
+    },
+    "add_local_2": {
+      "PointMLP": {
+        "acc": 0.6175,
+        "focus": 0.22106972336769104,
+        "outlier_attention": 0.054201461374759674,
+        "outlier_fraction": 0.03734516616314199
+      },
+      "AdaGAM": {
+        "acc": 0.62,
+        "focus": 0.22122173011302948,
+        "outlier_attention": 0.0548749715089798,
+        "outlier_fraction": 0.03734516616314199
+      }
+    },
+    "add_local_3": {
+      "PointMLP": {
+        "acc": 0.615,
+        "focus": 0.22153685986995697,
+        "outlier_attention": 0.06895306706428528,
+        "outlier_fraction": 0.04745084269662921
+      },
+      "AdaGAM": {
+        "acc": 0.5775,
+        "focus": 0.22180293500423431,
+        "outlier_attention": 0.0667715072631836,
+        "outlier_fraction": 0.04745084269662921
+      }
+    },
+    "add_local_4": {
+      "PointMLP": {
+        "acc": 0.5625,
+        "focus": 0.2216273695230484,
+        "outlier_attention": 0.07443200051784515,
+        "outlier_fraction": 0.055785761154855645
+      },
+      "AdaGAM": {
+        "acc": 0.5575,
+        "focus": 0.22354134917259216,
+        "outlier_attention": 0.07326414436101913,
+        "outlier_fraction": 0.055785761154855645
+      }
+    }
+  },
+  "drop_curves": {
+    "clean": {
+      "ks": [
+        0,
+        50,
+        100,
+        200,
+        300,
+        400,
+        500
+      ],
+      "PointMLP": {
+        "salient": [
+          0.91,
+          0.88,
+          0.88,
+          0.8625,
+          0.8525,
+          0.8425,
+          0.8225
+        ],
+        "random": [
+          0.91,
+          0.915,
+          0.9175,
+          0.9125,
+          0.9025,
+          0.8775,
+          0.85
+        ]
+      },
+      "AdaGAM": {
+        "salient": [
+          0.905,
+          0.8875,
+          0.885,
+          0.8675,
+          0.875,
+          0.8425,
+          0.81
+        ],
+        "random": [
+          0.905,
+          0.9025,
+          0.9025,
+          0.9025,
+          0.9025,
+          0.8725,
+          0.8325
+        ]
+      }
+    },
+    "add_local_2": {
+      "ks": [
+        0,
+        50,
+        100,
+        200,
+        300,
+        400,
+        500
+      ],
+      "PointMLP": {
+        "salient": [
+          0.6175,
+          0.595,
+          0.5575,
+          0.54,
+          0.5025,
+          0.4825,
+          0.4725
+        ],
+        "random": [
+          0.6175,
+          0.61,
+          0.6475,
+          0.63,
+          0.6025,
+          0.595,
+          0.5675
+        ]
+      },
+      "AdaGAM": {
+        "salient": [
+          0.62,
+          0.5875,
+          0.58,
+          0.555,
+          0.5125,
+          0.5075,
+          0.475
+        ],
+        "random": [
+          0.62,
+          0.63,
+          0.6325,
+          0.63,
+          0.5975,
+          0.6,
+          0.57
+        ]
+      }
+    }
+  }
+}
