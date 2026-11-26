@@ -1,5 +1,8 @@
 # AdaGAM: Adaptive Geometric Affine Modulation for Robust 3D Point Cloud Classification
 
+> **DAC-301 Deep Learning Course Project** · [Ankur Dahiya](https://github.com/ankur777jinn), [Gaurav Kumar](https://github.com/sekiroQ-Q), Diptanshu
+
+
 **AdaGAM** is a lightweight, permutation-invariant, self-conditioned FiLM modulation layer for 3D point cloud networks. It replaces the static affine parameters $(\alpha, \beta)$ in PointMLP's local geometric grouper with input-conditioned residual modulation $(\Delta\alpha(g), \Delta\beta(g))$ computed from pooled neighborhood statistics, initialized at identity.
 
 **▶ Live demo (runs in your browser): https://ankur777jinn.github.io/AdaGAM/** — PointMLP, AdaGAM and AdaGAM with its adaptation switched off, on official ModelNet-C test objects or your own point cloud.
@@ -125,3 +128,9 @@ change in function; BN-adapt needs a whole batch of one corruption, AdaGAM adapt
 - **PointMLP**: Ma, X., Qin, C., You, H., Ran, H., & Fu, Y. (2022). *Rethinking Network Design and Local Geometry in Point Cloud: A Simple Residual MLP Framework*. ICLR 2022.
 - **ModelNet-C**: Ren, J., Pan, L., & Liu, Z. (2022). *Benchmarking and Analyzing Point Cloud Classification under Corruptions*. ICML 2022.
 - **FiLM**: Perez, E., Strub, F., de Vries, H., Dumoulin, V., & Courville, A. (2018). *FiLM: Visual Reasoning with a General Conditioning Layer*. AAAI 2018.
+
+## Contributors
+
+- **Ankur Dahiya** ([@ankur777jinn](https://github.com/ankur777jinn))
+- **Gaurav Kumar** ([@sekiroQ-Q](https://github.com/sekiroQ-Q))
+- **Diptanshu**
